@@ -2,6 +2,7 @@
 
 import os
 import yaml
+import time
 try:
     yaml.warnings({'YAMLLoadWarning': False})
 except:
@@ -10,6 +11,7 @@ import tempfile
 import logging
 from neotermcolor import set_style, cprint
 
+set_style('robogerctl:error', 'red', attrs='bold')
 set_style('robogerctl:title', 'blue')
 set_style('robogerctl:separator', 'grey')
 set_style('robogerctl:attr')
@@ -115,6 +117,10 @@ if a.debug:
     logger.setLevel(level=logging.DEBUG)
     logging.basicConfig(level=logging.DEBUG)
 
+if a.output == 'raw':
+    import neotermcolor
+    neotermcolor._isatty = False
+
 import roboger_manager
 
 client_config = True
@@ -169,6 +175,21 @@ def format_dict(d, fields, xtra={}):
 
 
 def edit_obj(obj):
+
+    def getch():
+        import termios
+        import tty
+        fd = sys.stdin.fileno()
+        old_settings = termios.tcgetattr(fd)
+        try:
+            tty.setraw(sys.stdin.fileno())
+            ch = sys.stdin.read(1)
+        except:
+            time.sleep(2)
+        finally:
+            termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
+        return ch
+
     obj.load()
     fd, fname = tempfile.mkstemp('.yaml')
     try:
@@ -178,15 +199,24 @@ def edit_obj(obj):
             tmp.write(fc)
         from hashlib import sha256
         oldhash = sha256(fc.encode()).digest()
-        os.system(f'{editor} {fname}')
-        with open(fname) as tmp:
-            fc = tmp.read()
-            newhash = sha256(fc.encode()).digest()
-        if oldhash == newhash:
-            return ''
-        else:
-            obj.load(data=yaml.load(fc), load_protected_fields=False)
-            obj.save()
+        while True:
+            try:
+                os.system(f'{editor} {fname}')
+                with open(fname) as tmp:
+                    fc = tmp.read()
+                    newhash = sha256(fc.encode()).digest()
+                if oldhash == newhash:
+                    return ''
+                else:
+                    obj.load(data=yaml.load(fc), load_protected_fields=False)
+                    obj.save()
+                    return None
+            except Exception as e:
+                cprint(f'ERROR: {e}', '@robogerctl:error', file=sys.stderr)
+                if a.debug:
+                    import traceback
+                    traceback.print_exc()
+                getch()
     finally:
         os.unlink(fname)
 
@@ -381,7 +411,7 @@ try:
                                              endpoint_id=ep_id)
             result = process_obj_func(s, format_subscription)
 except Exception as e:
-    print(f'ERROR: {e}', file=sys.stderr)
+    cprint(f'ERROR: {e}', '@robogerctl:error', file=sys.stderr)
     if a.debug:
         raise
     sys.exit(1)
@@ -393,9 +423,6 @@ if result:
         import json
         print(json.dumps(result, indent=True, sort_keys=True))
     else:
-        if a.output == 'raw':
-            import neotermcolor
-            neotermcolor._isatty = False
         if isinstance(result, dict):
             from collections import OrderedDict
             import rapidtables
@@ -408,8 +435,7 @@ if result:
                 tbl.insert(0, OrderedDict(attr='res', value=result['res']))
             import rapidtables
             header, rows = rapidtables.format_table(
-                tbl,
-                fmt=rapidtables.FORMAT_GENERATOR_COLS)
+                tbl, fmt=rapidtables.FORMAT_GENERATOR_COLS)
             spacer = '  '
             cprint(spacer.join(header), '@robogerctl:title')
             cprint('-' * sum([(len(x) + 2) for x in header]),
