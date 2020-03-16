@@ -10,7 +10,10 @@ ver:
 clean:
 	rm -rf dist build robogerctl.egg-info
 
-d: test build
+d: clean sdist
+
+sdist:
+	python3 setup.py sdist
 
 build: clean build-packages
 
