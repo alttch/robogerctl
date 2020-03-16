@@ -12,3 +12,9 @@ uri: http://roboger-server:port
 key: MANAGEMENT_KEY
 #limits: true # set to manage server, where limits are enabled
 ```
+
+## Installation
+
+```
+pip3 install robogerctl
+```
