@@ -7,3 +7,4 @@ dist
 lib/_test.py
 data
 .idea/
+robogerctl.egg-info
