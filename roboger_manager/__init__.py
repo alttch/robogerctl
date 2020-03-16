@@ -32,6 +32,9 @@ class ManagementAPI:
         del result['ok']
         return result
 
+    def list_plugins(self):
+        return self.get('/plugin')
+
     def reset_addr_limits(self):
         self.post('/core', payload={'cmd': 'reset-addr-limits'})
 
@@ -255,6 +258,11 @@ def reset_addr_limits(api=None):
 def core_cleanup(api=None):
     api = api if api else default_api
     return api.core_cleanup()
+
+
+def list_plugins(api=None):
+    api = api if api else default_api
+    return api.list_plugins()
 
 
 def delete_everything(api=None, confirm=None):
