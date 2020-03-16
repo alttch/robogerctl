@@ -1,0 +1,9 @@
+__pycache__
+*.pyc
+TODO
+bak.sql
+dev
+dist
+lib/_test.py
+data
+.idea/
