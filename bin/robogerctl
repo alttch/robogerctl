@@ -8,6 +8,13 @@ except:
     pass
 import tempfile
 import logging
+from neotermcolor import set_style, cprint
+
+set_style('robogerctl:title', 'blue')
+set_style('robogerctl:separator', 'grey')
+set_style('robogerctl:attr')
+set_style('robogerctl:value', 'yellow')
+
 from pathlib import Path
 
 dir_me = Path(__file__).absolute().parents[1]
@@ -36,8 +43,8 @@ ap.add_argument('-F',
 ap.add_argument('-o',
                 '--output',
                 help='output',
-                choices=['raw', 'json', 'yaml'],
-                default='raw')
+                choices=['default', 'raw', 'json', 'yaml'],
+                default='default')
 
 sp = ap.add_subparsers(dest='command', help='command to execute', required=True)
 
@@ -54,6 +61,10 @@ reqn.add_argument('-f',
                   '--input-file',
                   help='input file ("stdin" for stdin)',
                   required=True)
+
+iap = sp.add_parser('plugin', help='plugin management', aliases=['plug', 'pl'])
+isp = iap.add_subparsers(dest='func', help='plugin commands', required=True)
+isp.add_parser('list', help='list_plugins', aliases=['ls', 'l'])
 
 for prs in [('addr', 'a'), ('endpoint', 'e', 'ep', 'end'),
             ('subscription', 's', 'sub')]:
@@ -288,6 +299,12 @@ try:
                     pass
             result = None
             raise
+    elif a.command in ['plugin', 'plug', 'pl']:
+        if a.func in ['list', 'ls', 'l']:
+            result = [
+                format_dict(d, ['plugin_name', 'description', 'version', 'url'])
+                for d in api.list_plugins()
+            ]
     elif a.command in ['addr', 'a']:
         if a.func in ['list', 'ls', 'l']:
             result = [
@@ -376,19 +393,38 @@ if result:
         import json
         print(json.dumps(result, indent=True, sort_keys=True))
     else:
+        if a.output == 'raw':
+            import neotermcolor
+            neotermcolor._isatty = False
         if isinstance(result, dict):
+            from collections import OrderedDict
             import rapidtables
             tbl = [
-                dict(attr=k, value=result[k])
+                OrderedDict(attr=k, value=result[k])
                 for k in sorted(result.keys())
                 if k != 'res'
             ]
             if 'res' in result.keys():
-                tbl.insert(0, dict(attr='res', value=result['res']))
-            rapidtables.print_table(tbl)
+                tbl.insert(0, OrderedDict(attr='res', value=result['res']))
+            import rapidtables
+            header, rows = rapidtables.format_table(
+                tbl,
+                fmt=rapidtables.FORMAT_GENERATOR_COLS)
+            spacer = '  '
+            cprint(spacer.join(header), '@robogerctl:title')
+            cprint('-' * sum([(len(x) + 2) for x in header]),
+                   '@robogerctl:separator')
+            for r in rows:
+                cprint(r[0] + '  ', '@robogerctl:attr', end='')
+                cprint(r[1], '@robogerctl:value')
         elif isinstance(result, list):
             import rapidtables
-            rapidtables.print_table(result)
+            header, tbl = rapidtables.format_table(
+                result, fmt=rapidtables.FORMAT_GENERATOR)
+            cprint(header, '@robogerctl:title')
+            cprint('-' * len(header), '@robogerctl:separator')
+            for t in tbl:
+                print(t)
         else:
             print(result)
 elif result != '' and result != []:
