@@ -2,6 +2,10 @@
 
 import os
 import yaml
+try:
+    yaml.warnings({'YAMLLoadWarning': False})
+except:
+    pass
 import tempfile
 import logging
 from pathlib import Path
