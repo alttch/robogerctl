@@ -35,6 +35,9 @@ class ManagementAPI:
     def reset_addr_limits(self):
         self.post('/core', payload={'cmd': 'reset-addr-limits'})
 
+    def core_cleanup(self):
+        self.post('/core', payload={'cmd': 'cleanup'})
+
     def delete_everything(self, confirm=None):
         if confirm == 'YES':
             self.post('/core', payload={'cmd': 'delete-everything'})
@@ -247,6 +250,11 @@ def list_addr(api=None):
 def reset_addr_limits(api=None):
     api = api if api else default_api
     return api.reset_addr_limits()
+
+
+def core_cleanup(api=None):
+    api = api if api else default_api
+    return api.core_cleanup()
 
 
 def delete_everything(api=None, confirm=None):
