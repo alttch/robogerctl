@@ -142,12 +142,14 @@ format_uri = lambda uri: 'http://{}'.format(uri.replace('0.0.0.0', '127.0.0.1'))
 if config.get('roboger'):
     api = roboger_manager.ManagementAPI(
         api_uri=format_uri(config['roboger']['gunicorn']['listen']),
-        api_key=config['roboger']['master']['key'],
+        api_key=os.getenv('ROBOGER_MASTERKEY',
+                          config['roboger']['master']['key']),
         timeout=a.timeout)
     limits = config['roboger'].get('limits')
 else:
     api = roboger_manager.ManagementAPI(api_uri=config['uri'],
-                                        api_key=config['key'],
+                                        api_key=os.getenv(
+                                            'ROBOGER_MASTERKEY', config['key']),
                                         timeout=a.timeout)
     limits = config.get('limits')
 
