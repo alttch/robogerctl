@@ -18,7 +18,7 @@ setuptools.setup(name='robogerctl',
                  install_requires=[
                      'requests',
                      'pyyaml',
-                     'pyaltt2>=0.0.58',
+                     'pyaltt2>=0.0.60',
                      'rapidtables',
                      'neotermcolor',
                  ],
