@@ -158,7 +158,6 @@ else:
     limits = config.get('limits')
 
 logger.debug(f'Client API URI {api_uri}')
-logger.debug(f'Client API key {api_key}')
 
 api = roboger_manager.ManagementAPI(api_uri=api_uri,
                                     api_key=api_key,
