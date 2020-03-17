@@ -125,14 +125,11 @@ if a.output == 'raw':
 
 import roboger_manager
 
-client_config = True
-
 if a.config_file:
     fname = a.config_file
 else:
     fname = os.path.expanduser('~/.robogerctl.yml')
     if not Path(fname).exists():
-        client_config = False
         fname = dir_me / 'etc/roboger.yml'
     if not Path(fname).exists():
         fname = '/usr/local/etc/roboger.yml'
@@ -142,17 +139,17 @@ with open(fname) as fh:
 
 format_uri = lambda uri: 'http://{}'.format(uri.replace('0.0.0.0', '127.0.0.1'))
 
-if client_config:
-    api = roboger_manager.ManagementAPI(api_uri=config['uri'],
-                                        api_key=config['key'],
-                                        timeout=a.timeout)
-    limits = config.get('limits')
-else:
+if config.get('roboger'):
     api = roboger_manager.ManagementAPI(
         api_uri=format_uri(config['roboger']['gunicorn']['listen']),
         api_key=config['roboger']['master']['key'],
         timeout=a.timeout)
     limits = config['roboger'].get('limits')
+else:
+    api = roboger_manager.ManagementAPI(api_uri=config['uri'],
+                                        api_key=config['key'],
+                                        timeout=a.timeout)
+    limits = config.get('limits')
 
 if limits:
     roboger_manager.use_limits = True
