@@ -1,4 +1,4 @@
-__version__ = '2.0.9'
+__version__ = '2.0.10'
 
 import setuptools
 
@@ -18,7 +18,7 @@ setuptools.setup(name='robogerctl',
                  install_requires=[
                      'requests',
                      'pyyaml',
-                     'pyaltt2>=0.0.53',
+                     'pyaltt2>=0.0.54',
                      'rapidtables',
                      'neotermcolor',
                  ],
