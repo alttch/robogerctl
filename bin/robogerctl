@@ -48,24 +48,25 @@ ap.add_argument('-o',
                 choices=['default', 'raw', 'json', 'yaml'],
                 default='default')
 
-sp = ap.add_subparsers(dest='command', help='command to execute', required=True)
+sp = ap.add_subparsers(dest='command', help='command to execute')
+sp.required = True
 
 sp_test = sp.add_parser('test', help='test server')
 sp_deploy = sp.add_parser('deploy', help='deploy configuration')
 sp_deploy.add_argument('--delete-everything',
                        help='DELETE ALL RESOURCES on server before deployment',
                        action='store_true')
-sp_test = sp.add_parser('reset-addr-limits',
-                        help='reset address limits (if used)')
-sp_test = sp.add_parser('core-cleanup', help='core cleanup')
 reqn = sp_deploy.add_argument_group('required named arguments')
-reqn.add_argument('-f',
-                  '--input-file',
-                  help='input file ("stdin" for stdin)',
-                  required=True)
+ifile = reqn.add_argument('-f',
+                          '--input-file',
+                          help='input file ("stdin" for stdin)')
+ifile.required = True
+sp.add_parser('reset-addr-limits', help='reset address limits (if used)')
+sp.add_parser('core-cleanup', help='core cleanup')
 
 iap = sp.add_parser('plugin', help='plugin management', aliases=['plug', 'pl'])
-isp = iap.add_subparsers(dest='func', help='plugin commands', required=True)
+isp = iap.add_subparsers(dest='func', help='plugin commands')
+isp.required = True
 isp.add_parser('list', help='list_plugins', aliases=['ls', 'l'])
 
 for prs in [('addr', 'a'), ('endpoint', 'e', 'ep', 'end'),
@@ -88,7 +89,8 @@ for prs in [('addr', 'a'), ('endpoint', 'e', 'ep', 'end'),
             'copy subscriptions',
             'copysub',
         ))
-    isp = iap.add_subparsers(dest='func', help=f'{i} commands', required=True)
+    isp = iap.add_subparsers(dest='func', help=f'{i} commands')
+    isp.required = True
     for fs in funcs:
         f = fs[1]
         x = isp.add_parser(f, help=fs[0], aliases=fs[2:])
@@ -106,10 +108,10 @@ for prs in [('addr', 'a'), ('endpoint', 'e', 'ep', 'end'),
                 help='Replace (remove existing) target subscriptions',
                 action='store_true')
         if f == 'apply':
-            reqn.add_argument('-f',
-                              '--input-file',
-                              help='input file ("stdin" for stdin)',
-                              required=True)
+            ifile = reqn.add_argument('-f',
+                                      '--input-file',
+                                      help='input file ("stdin" for stdin)')
+            ifile.required = True
 
 a = ap.parse_args()
 
