@@ -143,13 +143,14 @@ if config.get('roboger'):
     api = roboger_manager.ManagementAPI(
         api_uri=format_uri(config['roboger']['gunicorn']['listen']),
         api_key=os.getenv('ROBOGER_MASTERKEY',
-                          config['roboger']['master']['key']),
+                          config['roboger'].get('master', {}).get('key')),
         timeout=a.timeout)
     limits = config['roboger'].get('limits')
 else:
     api = roboger_manager.ManagementAPI(api_uri=config['uri'],
                                         api_key=os.getenv(
-                                            'ROBOGER_MASTERKEY', config['key']),
+                                            'ROBOGER_MASTERKEY',
+                                            config.get('key')),
                                         timeout=a.timeout)
     limits = config.get('limits')
 
