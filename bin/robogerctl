@@ -10,7 +10,7 @@ except:
 import tempfile
 import logging
 from neotermcolor import set_style, cprint
-from pyaltt2.config import load_yaml, config_value
+from pyaltt2.config import load_yaml, choose_file, config_value
 
 set_style('robogerctl:error', 'red', attrs='bold')
 set_style('robogerctl:title', 'blue')
@@ -126,14 +126,13 @@ if a.output == 'raw':
 
 import roboger_manager
 
-if a.config_file:
-    fname = a.config_file
-else:
-    fname = os.path.expanduser('~/.robogerctl.yml')
-    if not Path(fname).exists():
-        fname = dir_me / 'etc/roboger.yml'
-    if not Path(fname).exists():
-        fname = '/usr/local/etc/roboger.yml'
+fname = choose_file(a.config_file,
+                    env='ROBOGER_CONFIG',
+                    choices=[
+                        '~/.robogerctl.yml',
+                        (dir_me / 'etc/roboger.yml').as_posix(),
+                        '/usr/local/etc/roboger.yml'
+                    ])
 logger.debug(f'Client using config file {fname}')
 config = load_yaml(fname)
 
