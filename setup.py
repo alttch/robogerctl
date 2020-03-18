@@ -16,11 +16,8 @@ setuptools.setup(name='robogerctl',
                  packages=setuptools.find_packages(),
                  license='Apache License 2.0',
                  install_requires=[
-                     'requests',
-                     'pyyaml',
-                     'pyaltt2>=0.0.60',
-                     'rapidtables',
-                     'neotermcolor',
+                     'requests', 'pyyaml', 'pyaltt2>=0.0.60', 'rapidtables',
+                     'neotermcolor', 'jsonschema'
                  ],
                  classifiers=(
                      'Programming Language :: Python :: 3',

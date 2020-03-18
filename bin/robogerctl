@@ -9,6 +9,7 @@ except:
     pass
 import tempfile
 import logging
+import jsonschema
 from neotermcolor import set_style, cprint
 from pyaltt2.config import load_yaml, choose_file, config_value
 
@@ -17,6 +18,24 @@ set_style('robogerctl:title', 'blue')
 set_style('robogerctl:separator', 'grey')
 set_style('robogerctl:attr')
 set_style('robogerctl:value', 'yellow')
+
+CONFIG_PROPERTY_MAP_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'uri': {
+            'type': 'string',
+            'format': 'uri'
+        },
+        'key': {
+            'type': 'string'
+        },
+        'limits': {
+            'type': 'boolean'
+        }
+    },
+    'additionalProperties': False,
+    'required': ['uri']
+}
 
 from pathlib import Path
 
@@ -149,6 +168,7 @@ if config.get('roboger'):
                            to_str=True)
     limits = config['roboger'].get('limits')
 else:
+    jsonschema.validate(config, schema=CONFIG_PROPERTY_MAP_SCHEMA)
     api_uri = config['uri']
     api_key = config_value(env='ROBOGER_MASTERKEY',
                            config=config,
