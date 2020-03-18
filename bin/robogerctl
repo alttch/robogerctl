@@ -391,6 +391,7 @@ def format_subscription(obj):
     d['res'] = (f'{d["addr_id"]}.' f'{d["endpoint_id"]}.{d["id"]}')
     del d['id']
     del d['addr_id']
+    del d['endpoint_id']
     return d
 
 
