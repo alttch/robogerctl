@@ -37,6 +37,101 @@ CONFIG_PROPERTY_MAP_SCHEMA = {
     'required': ['uri']
 }
 
+DEPLOY_PROPERTY_MAP_SCHEMA = {
+    'type': 'object',
+    'properties': {
+        'version': {
+            'type': 'number',
+            'minimum': 1.5
+        },
+        'addrs': {
+            'type': 'array',
+            'items': {
+                'type': 'object',
+                'properties': {
+                    'a': {
+                        'type': 'string'
+                    },
+                    'active': {
+                        'type': 'integer',
+                        'minimum': -1,
+                        'maximum': 1
+                    },
+                    'lim_c': {
+                        'type': 'integer',
+                        'minimum': 0,
+                    },
+                    'lim_s': {
+                        'type': 'integer',
+                        'minimum': 0,
+                    },
+                    'endpoints': {
+                        'type': 'array',
+                        'items': {
+                            'type': 'object',
+                            'properties': {
+                                'plugin_name': {
+                                    'type': 'string'
+                                },
+                                'config': {
+                                    'type': 'object'
+                                },
+                                'active': {
+                                    'type': 'integer',
+                                    'minimum': -1,
+                                    'maximum': 1
+                                },
+                                'description': {
+                                    'type': 'string'
+                                },
+                                'subscriptions': {
+                                    'type': 'array',
+                                    'items': {
+                                        'type': 'object',
+                                        'properties': {
+                                            'active': {
+                                                'type': 'integer',
+                                                'minimum': -1,
+                                                'maximum': 1
+                                            },
+                                            'level': {
+                                                'type': ['integer', 'string']
+                                            },
+                                            'level_match': {
+                                                'type':
+                                                    'string',
+                                                'enum': [
+                                                    'g', 'gt', 'ge', 'l', 'lt',
+                                                    'le', 'e'
+                                                ]
+                                            },
+                                            'sender': {
+                                                'type': 'string'
+                                            },
+                                            'tag': {
+                                                'type': 'string'
+                                            },
+                                            'location': {
+                                                'type': 'string'
+                                            }
+                                        },
+                                        'additionalProperties': False
+                                    }
+                                }
+                            },
+                            'additionalProperties': False,
+                            'required': ['plugin_name']
+                        }
+                    }
+                },
+                'additionalProperties': False,
+            }
+        }
+    },
+    'additionalProperties': False,
+    'required': ['version', 'addrs']
+}
+
 from pathlib import Path
 
 dir_me = Path(__file__).absolute().parents[1]
@@ -73,6 +168,10 @@ sp.required = True
 
 sp_test = sp.add_parser('test', help='test server')
 sp_deploy = sp.add_parser('deploy', help='deploy configuration')
+sp_deploy.add_argument(
+    '--validate',
+    help='validate deployment file, without actual deploment',
+    action='store_true')
 sp_deploy.add_argument('--delete-everything',
                        help='DELETE ALL RESOURCES on server before deployment',
                        action='store_true')
@@ -319,45 +418,48 @@ try:
             with open(a.input_file) as fh:
                 fc = fh.read()
         data = yaml.load(fc)
-        result = []
-        if a.delete_everything:
-            roboger_manager.delete_everything(confirm='YES')
-        try:
-            for acfg in data.get('addrs', []):
-                addr = roboger_manager.create_addr()
-                result.append(addr)
-                addr_config = acfg.copy()
-                try:
-                    del addr_config['endpoints']
-                except:
-                    pass
-                addr.load(data=addr_config, load_protected_fields=False)
-                addr.save()
-                if 'a' in acfg:
-                    addr.change(to=acfg['a'])
-                for ecfg in acfg.get('endpoints', []):
-                    ep = addr.create_endpoint(plugin_name=ecfg['plugin_name'])
-                    ep_config = ecfg.copy()
-                    del ep_config['plugin_name']
+        jsonschema.validate(data, schema=DEPLOY_PROPERTY_MAP_SCHEMA)
+        if not a.validate:
+            result = []
+            if a.delete_everything:
+                roboger_manager.delete_everything(confirm='YES')
+            try:
+                for acfg in data.get('addrs', []):
+                    addr = roboger_manager.create_addr()
+                    result.append(addr)
+                    addr_config = acfg.copy()
                     try:
-                        del ep_config['subscriptions']
+                        del addr_config['endpoints']
                     except:
                         pass
-                    ep.load(data=ep_config, load_protected_fields=False)
-                    ep.save()
-                    for scfg in ecfg.get('subscriptions', []):
-                        s = ep.create_subscription()
-                        s.load(data=scfg, load_protected_fields=False)
-                        s.save()
-            result = {'deployed': [(a.id) for a in result]}
-        except Exception as e:
-            for addr in result:
-                try:
-                    addr.delete()
-                except:
-                    pass
-            result = None
-            raise
+                    addr.load(data=addr_config, load_protected_fields=False)
+                    addr.save()
+                    if 'a' in acfg:
+                        addr.change(to=acfg['a'])
+                    for ecfg in acfg.get('endpoints', []):
+                        ep = addr.create_endpoint(
+                            plugin_name=ecfg['plugin_name'])
+                        ep_config = ecfg.copy()
+                        del ep_config['plugin_name']
+                        try:
+                            del ep_config['subscriptions']
+                        except:
+                            pass
+                        ep.load(data=ep_config, load_protected_fields=False)
+                        ep.save()
+                        for scfg in ecfg.get('subscriptions', []):
+                            s = ep.create_subscription()
+                            s.load(data=scfg, load_protected_fields=False)
+                            s.save()
+                result = {'deployed': [(a.id) for a in result]}
+            except Exception as e:
+                for addr in result:
+                    try:
+                        addr.delete()
+                    except:
+                        pass
+                result = None
+                raise
     elif a.command in ['plugin', 'plug', 'pl']:
         if a.func in ['list', 'ls', 'l']:
             result = [
@@ -447,6 +549,8 @@ except Exception as e:
 
 if result:
     if a.output == 'yaml':
+        if isinstance(result, list):
+            result = [dict(r) for r in result]
         print(yaml.dump(result, default_flow_style=False))
     elif a.output == 'json':
         import json
